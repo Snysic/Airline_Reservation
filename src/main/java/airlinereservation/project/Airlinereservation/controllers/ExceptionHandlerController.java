@@ -1,11 +1,14 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-import com.hamidur.springBootRESTfulWebservices.errors.InvalidRequestException;
-import com.hamidur.springBootRESTfulWebservices.errors.InvalidRequestExceptionResponse;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+
+import airlinereservation.project.Airlinereservation.errors.InvalidRequestException;
+import airlinereservation.project.Airlinereservation.errors.InvalidRequestExceptionResponse;
 
 @RestControllerAdvice
 public class ExceptionHandlerController {
@@ -18,7 +21,8 @@ public class ExceptionHandlerController {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneralException(Exception ex) {
-        String errorMessage = "Произошла ошибка: " + ex.getMessage();
+        String errorMessage = "Error: " + ex.getMessage();
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorMessage);
     }
 }
