@@ -1,10 +1,10 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-import com.hamidur.springBootRESTfulWebservices.models.Flight;
-import com.hamidur.springBootRESTfulWebservices.services.FlightService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import airlinereservation.project.Airlinereservation.models.Flight;
 
 import java.util.List;
 

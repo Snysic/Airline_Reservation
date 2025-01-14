@@ -1,10 +1,10 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-import com.hamidur.springBootRESTfulWebservices.models.Reservation;
-import com.hamidur.springBootRESTfulWebservices.services.ReservationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import airlinereservation.project.Airlinereservation.models.Reservation;
 
 import java.util.List;
 
@@ -12,9 +12,9 @@ import java.util.List;
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
 
-    private final ReservationService reservationService;
+    private final Reservation reservationService;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(Reservation reservationService) {
         this.reservationService = reservationService;
     }
 
