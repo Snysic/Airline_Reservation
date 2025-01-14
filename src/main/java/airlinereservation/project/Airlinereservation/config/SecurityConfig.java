@@ -8,21 +8,23 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf().disable() 
+        http
+            .csrf(csrf -> csrf.disable()) 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/register", "/api/v1/login", "/swagger-ui.html", "/api-docs/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/v1/user/**").hasRole("USER")
                 .anyRequest().authenticated()
             )
-            .httpBasic() 
-            .and()
+            .httpBasic(withDefaults()) 
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             );
@@ -34,3 +36,4 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
+

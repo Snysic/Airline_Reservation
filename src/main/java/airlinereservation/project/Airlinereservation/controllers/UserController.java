@@ -4,6 +4,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import airlinereservation.project.Airlinereservation.models.User;
+import airlinereservation.project.Airlinereservation.services.UserService;
+
 import java.util.List;
 
 @RestController
