@@ -50,17 +50,17 @@ CREATE TABLE flights (
     FOREIGN KEY (airplane_id) REFERENCES airplanes (airplane_id)
 );
 
-CREATE TABLE customers_flights (
+CREATE TABLE reservations (
+    reservation_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    date_time DATETIME NOT NULL,
+    status VARCHAR(20) NOT NULL,
     customer_id INT NOT NULL,
     flight_id INT NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
     FOREIGN KEY (flight_id) REFERENCES flights (flight_id)
 );
 
-CREATE TABLE reservations (
-    reservation_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    date_time DATETIME NOT NULL,
-    status VARCHAR(20) NOT NULL,
+CREATE TABLE customers_flights (
     customer_id INT NOT NULL,
     flight_id INT NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES customers (customer_id),

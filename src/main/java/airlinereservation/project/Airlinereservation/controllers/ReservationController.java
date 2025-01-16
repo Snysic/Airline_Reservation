@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import airlinereservation.project.Airlinereservation.models.Reservation;
-
+import airlinereservation.project.Airlinereservation.services.ReservationService;
 
 import java.util.List;
 
@@ -14,12 +14,9 @@ import java.util.List;
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
 
+    private final ReservationService reservationService;
 
-    private final Reservation reservationService;
-
-    public ReservationController(Reservation reservationService) {
-
-    
+    public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
     }
 
@@ -37,7 +34,11 @@ public class ReservationController {
 
     @PostMapping
     public ResponseEntity<Reservation> createReservation(@RequestBody Reservation reservation) {
-        Reservation createdReservation = reservationService.createReservation(reservation);
+        Reservation createdReservation = reservationService.createReservation(
+                reservation.getFlight().getId(),
+                reservation.getUser().getId(),
+                reservation.getReservedSeats()
+        );
         return ResponseEntity.status(HttpStatus.CREATED).body(createdReservation);
     }
 

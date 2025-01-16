@@ -2,26 +2,26 @@ package airlinereservation.project.Airlinereservation.services;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import airlinereservation.project.Airlinereservation.models.Role;
+import org.springframework.web.multipart.MultipartFile;
 import airlinereservation.project.Airlinereservation.models.User;
 import airlinereservation.project.Airlinereservation.repositories.RoleRepository;
 import airlinereservation.project.Airlinereservation.repositories.UserRepository;
+import airlinereservation.project.Airlinereservation.repositories.ReservationRepository;
 
+import java.io.IOException;
 import java.util.List;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final ReservationRepository reservationRepository;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, 
+                       ReservationRepository reservationRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
-        this.passwordEncoder = passwordEncoder;
+        this.reservationRepository = reservationRepository;
     }
 
     public List<User> getAllUsers() {
@@ -38,40 +38,21 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
     }
 
-    public User createUser(String username, String password, String roleName) {
-        if (userRepository.existsByUsername(username)) {
-            throw new RuntimeException("Username already exists: " + username);
-        }
-
-        Role role = roleRepository.findByName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
-
-        User user = new User();
-        user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(password));
-        user.setRoles(Set.of(role));
-
-        return userRepository.save(user);
+    public List<String> getUserReservations(User user) {
+        return reservationRepository.findByUser(user).stream()
+                .map(reservation -> "Reservation ID: " + reservation.getId() + 
+                                    ", Flight: " + reservation.getFlight().getFlightCode() +
+                                    ", Seats: " + reservation.getReservedSeats() +
+                                    ", Status: " + reservation.getStatus())
+                .collect(Collectors.toList());
     }
 
-    public User updateUser(Long id, User updatedUser) {
-        User existingUser = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + id));
-
-        existingUser.setUsername(updatedUser.getUsername());
-        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
-            existingUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
+    public void uploadProfilePicture(User user, MultipartFile file) {
+        try {
+            user.setProfilePicture(file.getBytes());
+            userRepository.save(user);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to upload profile picture");
         }
-        existingUser.setRoles(updatedUser.getRoles());
-
-        return userRepository.save(existingUser);
     }
-
-    public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with ID: " + id);
-        }
-        userRepository.deleteById(id);
-    }
-
 }

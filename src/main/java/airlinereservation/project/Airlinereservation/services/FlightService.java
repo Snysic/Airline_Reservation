@@ -27,12 +27,14 @@ public class FlightService {
     }
 
     public Flight createFlight(Flight flight) {
+        if (flight.getDepartureTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Cannot create a flight with a past departure time.");
+        }
         return flightRepository.save(flight);
     }
 
     public Flight updateFlight(Long id, Flight updatedFlight) {
-        Flight existingFlight = flightRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Flight not found with ID: " + id));
+        Flight existingFlight = getFlightById(id);
 
         existingFlight.setFlightCode(updatedFlight.getFlightCode());
         existingFlight.setSource(updatedFlight.getSource());
@@ -55,12 +57,5 @@ public class FlightService {
     public List<Flight> searchFlights(String source, String destination) {
         return flightRepository.findBySourceAndDestination(source, destination);
     }
-
-    public List<Flight> getActiveFlights() {
-        return flightRepository.findByStatus("ACTIVE");
-    }
-
-    public List<Flight> getFlightsAfter(LocalDateTime departureTime) {
-        return flightRepository.findByDepartureTimeAfter(departureTime);
-    }
 }
+

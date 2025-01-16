@@ -1,16 +1,16 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
 import airlinereservation.project.Airlinereservation.models.User;
 import airlinereservation.project.Airlinereservation.services.UserService;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 public class UserController {
 
     private final UserService userService;
@@ -19,27 +19,16 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        List<User> users = userService.getAllUsers();
-        return ResponseEntity.ok(users);
+    @GetMapping("/reservations")
+    public ResponseEntity<List<String>> getUserReservations(Authentication authentication) {
+        User user = userService.getUserByUsername(authentication.getName());
+        return ResponseEntity.ok(userService.getUserReservations(user));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
-        User user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
-    }
-
-    @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        User createdUser = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.noContent().build();
+    @PostMapping("/profile/upload")
+    public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file, Authentication authentication) {
+        User user = userService.getUserByUsername(authentication.getName());
+        userService.uploadProfilePicture(user, file);
+        return ResponseEntity.ok("Profile picture uploaded successfully");
     }
 }
