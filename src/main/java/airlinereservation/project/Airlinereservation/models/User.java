@@ -1,6 +1,8 @@
 package airlinereservation.project.Airlinereservation.models;
 
+import airlinereservation.project.Airlinereservation.models.enums.UserRole;
 import jakarta.persistence.*;
+
 import java.util.Set;
 
 @Entity
@@ -17,8 +19,8 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Lob
-    private byte[] profilePicture;
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -28,14 +30,28 @@ public class User {
     )
     private Set<Role> roles;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private Set<Reservation> reservations;
+
+    @Lob
+    @Column(name = "profile_picture")
+    private byte[] profilePicture;
+
     public User() {
     }
 
-    public User(String username, String password) {
+    public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
+        this.email = email;
     }
 
+    public User(String username, String password, String email, byte[] profilePicture) {
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.profilePicture = profilePicture;
+    }
 
     public Long getId() {
         return id;
@@ -61,12 +77,12 @@ public class User {
         this.password = password;
     }
 
-    public byte[] getProfilePicture() {
-        return profilePicture;
+    public String getEmail() {
+        return email;
     }
 
-    public void setProfilePicture(byte[] profilePicture) {
-        this.profilePicture = profilePicture;
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public Set<Role> getRoles() {
@@ -77,12 +93,38 @@ public class User {
         this.roles = roles;
     }
 
+    public Set<Reservation> getReservations() {
+        return reservations;
+    }
+
+    public void setReservations(Set<Reservation> reservations) {
+        this.reservations = reservations;
+    }
+
+    public byte[] getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(byte[] profilePicture) {
+        this.profilePicture = profilePicture;
+    }
+
+    public boolean isAdmin() {
+        return roles.stream().anyMatch(role -> role.getName() == UserRole.ROLE_ADMIN);
+    }
+
+    public boolean isUser() {
+        return roles.stream().anyMatch(role -> role.getName() == UserRole.ROLE_USER);
+    }
+
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
                 ", roles=" + roles +
                 '}';
     }
 }
+

@@ -1,7 +1,10 @@
 package airlinereservation.project.Airlinereservation.models;
 
+import airlinereservation.project.Airlinereservation.models.enums.UserRole;
 import jakarta.persistence.*;
+
 import java.util.Set;
+
 
 @Entity
 @Table(name = "roles")
@@ -11,16 +14,17 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "name", nullable = false, unique = true)
-    private String name;
+    private UserRole name;
 
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     private Set<User> users;
 
     public Role() {
     }
 
-    public Role(String name) {
+    public Role(UserRole name) {
         this.name = name;
     }
 
@@ -32,11 +36,11 @@ public class Role {
         this.id = id;
     }
 
-    public String getName() {
+    public UserRole getName() {
         return name;
     }
 
-    public void setName(String name) {
+    public void setName(UserRole name) {
         this.name = name;
     }
 
@@ -52,7 +56,7 @@ public class Role {
     public String toString() {
         return "Role{" +
                 "id=" + id +
-                ", name='" + name + '\'' +
+                ", name=" + name +
                 '}';
     }
 }

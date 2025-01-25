@@ -1,11 +1,12 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import airlinereservation.project.Airlinereservation.models.Flight;
 import airlinereservation.project.Airlinereservation.models.Reservation;
-import airlinereservation.project.Airlinereservation.services.FlightService;
-import airlinereservation.project.Airlinereservation.services.ReservationService;
+import airlinereservation.project.Airlinereservation.models.User;
+import airlinereservation.project.Airlinereservation.services.AdminService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -13,27 +14,36 @@ import java.util.List;
 @RequestMapping("/api/v1/admin")
 public class AdminController {
 
-    private final FlightService flightService;
-    private final ReservationService reservationService;
+    private final AdminService adminService;
 
-    public AdminController(FlightService flightService, ReservationService reservationService) {
-        this.flightService = flightService;
-        this.reservationService = reservationService;
-    }
-
-    @GetMapping("/reservations")
-    public ResponseEntity<List<Reservation>> getAllReservations() {
-        return ResponseEntity.ok(reservationService.getAllReservations());
+    public AdminController(AdminService adminService) {
+        this.adminService = adminService;
     }
 
     @PostMapping("/flights")
     public ResponseEntity<Flight> createFlight(@RequestBody Flight flight) {
-        return ResponseEntity.ok(flightService.createFlight(flight));
+        return ResponseEntity.status(HttpStatus.CREATED).body(adminService.createFlight(flight));
     }
 
     @DeleteMapping("/flights/{id}")
     public ResponseEntity<Void> deleteFlight(@PathVariable Long id) {
-        flightService.deleteFlight(id);
+        adminService.deleteFlight(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/reservations")
+    public ResponseEntity<List<Reservation>> getAllReservations() {
+        return ResponseEntity.ok(adminService.getAllReservations());
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
+    }
+
+    @PutMapping("/flights/status")
+    public ResponseEntity<String> updateFlightStatus() {
+        adminService.updateFlightStatus();
+        return ResponseEntity.ok("Flight statuses updated successfully");
     }
 }

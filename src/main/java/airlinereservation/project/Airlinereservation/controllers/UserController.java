@@ -27,8 +27,22 @@ public class UserController {
 
     @PostMapping("/profile/upload")
     public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file, Authentication authentication) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File cannot be empty");
+        }
+
         User user = userService.getUserByUsername(authentication.getName());
         userService.uploadProfilePicture(user, file);
         return ResponseEntity.ok("Profile picture uploaded successfully");
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<String> registerUser(@RequestBody User user) {
+        if (user == null || user.getUsername() == null || user.getPassword() == null || user.getEmail() == null) {
+            throw new IllegalArgumentException("User data is incomplete");
+        }
+
+        userService.registerUser(user);
+        return ResponseEntity.ok("User registered successfully");
     }
 }

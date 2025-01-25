@@ -1,4 +1,4 @@
-package airlinereservation.project.Airlinereservation.utils;
+package utils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

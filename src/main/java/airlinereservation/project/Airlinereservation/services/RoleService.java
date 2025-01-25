@@ -1,11 +1,11 @@
 package airlinereservation.project.Airlinereservation.services;
 
+import airlinereservation.project.Airlinereservation.models.Role;
+import airlinereservation.project.Airlinereservation.models.enums.UserRole;
+import airlinereservation.project.Airlinereservation.repositories.RoleRepository;
 import org.springframework.stereotype.Service;
 
-import airlinereservation.project.Airlinereservation.models.Role;
-import airlinereservation.project.Airlinereservation.repositories.RoleRepository;
-
-import java.util.Optional;
+import java.util.List;
 
 @Service
 public class RoleService {
@@ -16,14 +16,17 @@ public class RoleService {
         this.roleRepository = roleRepository;
     }
 
-    public Role getRoleByName(String name) {
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
+
+    public Role getRoleByName(UserRole name) {
         return roleRepository.findByName(name)
                 .orElseThrow(() -> new RuntimeException("Role not found: " + name));
     }
 
-    public Role createRole(String name) {
-        Optional<Role> existingRole = roleRepository.findByName(name);
-        if (existingRole.isPresent()) {
+    public Role createRole(UserRole name) {
+        if (roleRepository.findByName(name).isPresent()) {
             throw new RuntimeException("Role already exists: " + name);
         }
 
@@ -38,7 +41,19 @@ public class RoleService {
         roleRepository.deleteById(id);
     }
 
-    public boolean roleExists(String name) {
+    public boolean roleExists(UserRole name) {
         return roleRepository.findByName(name).isPresent();
+    }
+
+    public Role updateRole(Long id, UserRole newName) {
+        Role existingRole = roleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Role not found with ID: " + id));
+
+        if (roleRepository.findByName(newName).isPresent()) {
+            throw new RuntimeException("Role with name already exists: " + newName);
+        }
+
+        existingRole.setName(newName);
+        return roleRepository.save(existingRole);
     }
 }

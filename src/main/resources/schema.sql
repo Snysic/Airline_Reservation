@@ -1,68 +1,42 @@
-CREATE TABLE airports (
-    airport_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    airport_name VARCHAR(50) NOT NULL
+CREATE TABLE roles (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
 );
 
-CREATE TABLE airlines (
-    airline_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    airline_name VARCHAR(50) NOT NULL
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    profile_picture LONGBLOB 
 );
 
-CREATE TABLE airplanes (
-    airplane_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    airplane_name VARCHAR(50) NOT NULL,
-    airline_id INT NOT NULL,
-    FOREIGN KEY (airline_id) REFERENCES airlines (airline_id)
-);
-
-CREATE TABLE sources (
-    source_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    date_time DATETIME NOT NULL,
-    airport_id INT NOT NULL,
-    FOREIGN KEY (airport_id) REFERENCES airports (airport_id)
-);
-
-CREATE TABLE destinations (
-    destination_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    date_time DATETIME NOT NULL,
-    airport_id INT NOT NULL,
-    FOREIGN KEY (airport_id) REFERENCES airports (airport_id)
-);
-
-CREATE TABLE customers (
-    customer_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50),
-    email VARCHAR(100) NOT NULL UNIQUE
+CREATE TABLE roles_users (
+    role_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    FOREIGN KEY (role_id) REFERENCES roles (id),
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    PRIMARY KEY (role_id, user_id)
 );
 
 CREATE TABLE flights (
-    flight_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    flight_code VARCHAR(10) NOT NULL,
-    source_id INT NOT NULL,
-    destination_id INT NOT NULL,
-    airplane_id INT NOT NULL,
-    fare DECIMAL(10, 2) NOT NULL,
-    capacity INT NOT NULL,
-    status VARCHAR(20) NOT NULL,
-    FOREIGN KEY (source_id) REFERENCES sources (source_id),
-    FOREIGN KEY (destination_id) REFERENCES destinations (destination_id),
-    FOREIGN KEY (airplane_id) REFERENCES airplanes (airplane_id)
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    flight_code VARCHAR(10) NOT NULL UNIQUE,
+    source VARCHAR(100) NOT NULL,
+    destination VARCHAR(100) NOT NULL,
+    departure_time DATETIME NOT NULL,
+    arrival_time DATETIME NOT NULL,
+    available_seats INT NOT NULL,
+    status VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE reservations (
-    reservation_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    date_time DATETIME NOT NULL,
-    status VARCHAR(20) NOT NULL,
-    customer_id INT NOT NULL,
-    flight_id INT NOT NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
-    FOREIGN KEY (flight_id) REFERENCES flights (flight_id)
-);
-
-CREATE TABLE customers_flights (
-    customer_id INT NOT NULL,
-    flight_id INT NOT NULL,
-    FOREIGN KEY (customer_id) REFERENCES customers (customer_id),
-    FOREIGN KEY (flight_id) REFERENCES flights (flight_id)
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    flight_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    reservation_time DATETIME NOT NULL,
+    reserved_seats INT NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    FOREIGN KEY (flight_id) REFERENCES flights (id),
+    FOREIGN KEY (user_id) REFERENCES users (id)
 );

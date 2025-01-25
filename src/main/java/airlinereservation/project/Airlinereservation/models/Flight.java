@@ -32,6 +32,9 @@ public class Flight {
     @Column(name = "status", nullable = false)
     private String status;
 
+    @Column(name = "available", nullable = false)
+    private boolean available = true;
+
     public Flight() {
     }
 
@@ -44,6 +47,7 @@ public class Flight {
         this.arrivalTime = arrivalTime;
         this.availableSeats = availableSeats;
         this.status = status;
+        this.available = true;
     }
 
     public Long getId() {
@@ -110,6 +114,14 @@ public class Flight {
         this.status = status;
     }
 
+    public boolean isAvailable() {
+        return available;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
     @Override
     public String toString() {
         return "Flight{" +
@@ -121,6 +133,7 @@ public class Flight {
                 ", arrivalTime=" + arrivalTime +
                 ", availableSeats=" + availableSeats +
                 ", status='" + status + '\'' +
+                ", available=" + available +
                 '}';
     }
 }
