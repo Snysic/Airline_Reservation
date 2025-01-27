@@ -1,9 +1,22 @@
-# Aerolinea Factoría F5
+<!--Airline-->
 
-## ✅Project Description
-The Aerolínea Factoría F5 project is a comprehensive RESTful API designed for managing an airline's operations, including user management, flight scheduling, reservation handling, and destination management. The system incorporates advanced features such as secure authentication using JWT or Basic Auth and ensures flight availability is accurately maintained. The project emphasizes clean architecture and object-oriented programming principles to deliver a robust and maintainable system.
+<!--Title-->
 
-The system guarantees that no bookings can be made for unavailable flights or those exceeding their operational dates.
+<p align="left"><strong><samp>「</samp></strong></p>
+
+<p align="center">
+<b>Airline_Reservation</b>
+  <br>
+    <img src="https://github.com/AI-School-F5-P2/Aerolinea_equipo_4/assets/131301013/479cb0b4-3d02-4c4a-a90d-34525d250c69">   
+  <br>
+<b>    
+  ✈️The Airline_Reservation project is a comprehensive RESTful API designed for managing an airline's operations, including user management, flight scheduling, reservation handling, and destination management. The system incorporates advanced features such as secure authentication Basic Auth and ensures flight availability is accurately maintained. The project emphasizes clean architecture and object-oriented programming principles to deliver a robust and maintainable system.The system guarantees that no bookings can be made for unavailable flights or those exceeding their operational dates.✈️
+</b>
+
+<p align="right"><strong><samp>」</samp></strong></p>
+  <br>
+  <br>
+  <br>
 
 ## ✅Features Overview
 
@@ -11,7 +24,7 @@ The system guarantees that no bookings can be made for unavailable flights or th
  - Role-Based Access Control: Includes ROLE_ADMIN and ROLE_USER for access differentiation.
  - User Registration: Allows users to sign up with personal information.
  - Profile Picture Upload: Users can upload a profile picture; a default image is shown otherwise.
- - User Login: Secure login with JWT or Basic Auth for API access.
+ - User Login: Secure login with Basic Auth for API access.
 # Flight Management
  - Flight Scheduling: Automatic creation of flight data during initialization via SQL scripts.
  - Dynamic Status Updates: Automatically marks flights as unavailable (false) when seats are fully booked or dates are invalid.
@@ -31,15 +44,15 @@ The system guarantees that no bookings can be made for unavailable flights or th
 
  - Java Development Kit (JDK) 21: Required to compile and run the project.
  - Maven: For dependency management and project build.
- - Database: MySQL or PostgreSQL for data storage.
+ - Database: DBeaver 24.3.2 for data storage.
  - IDE: A modern IDE like IntelliJ IDEA or Eclipse.
- - Docker (optional): For containerization.
+ - Docker: For containerization.
   
 ## ✅Installation Steps
 
 1 Clone the repository:
 
- ``https://github.com/Snysic/SpringbootAerolinea.git``
+ ``https://github.com/Snysic/Airline_Reservation.git``
 
 2 Set up the project in your IDE:
 
@@ -49,11 +62,11 @@ The system guarantees that no bookings can be made for unavailable flights or th
   
 3 Configure the database:
 
- - For MySQL or PostgreSQL, update application.properties with the appropriate database URL, username, and password.
+ - For DBeaver 24.3.2, update application.properties with the appropriate database URL, username, and password.
 
 4 Run the application:
 
-- Navigate to the SpringaerolineaApplication class.
+- Navigate to the AirlineReservationApplication class.
 - Run the project to start the server.
   
 5 Access the application:
