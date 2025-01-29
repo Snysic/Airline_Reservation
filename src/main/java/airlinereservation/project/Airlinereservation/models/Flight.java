@@ -38,6 +38,19 @@ public class Flight {
     public Flight() {
     }
 
+    public Flight(Long id, String flightCode, String source, String destination, LocalDateTime departureTime,
+                  LocalDateTime arrivalTime, int availableSeats, String status) {
+        this.id = id;
+        this.flightCode = flightCode;
+        this.source = source;
+        this.destination = destination;
+        this.departureTime = departureTime;
+        this.arrivalTime = arrivalTime;
+        this.availableSeats = availableSeats;
+        this.status = status;
+        this.available = true;
+    }
+
     public Flight(String flightCode, String source, String destination, LocalDateTime departureTime,
                   LocalDateTime arrivalTime, int availableSeats, String status) {
         this.flightCode = flightCode;

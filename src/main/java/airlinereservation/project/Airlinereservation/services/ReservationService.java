@@ -8,6 +8,7 @@ import airlinereservation.project.Airlinereservation.repositories.FlightReposito
 import airlinereservation.project.Airlinereservation.repositories.ReservationRepository;
 import airlinereservation.project.Airlinereservation.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,11 +19,16 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final FlightRepository flightRepository;
     private final UserRepository userRepository;
+    private final ReservationLockService reservationLockService;
 
-    public ReservationService(ReservationRepository reservationRepository, FlightRepository flightRepository, UserRepository userRepository) {
+    public ReservationService(ReservationRepository reservationRepository, 
+                              FlightRepository flightRepository, 
+                              UserRepository userRepository,
+                              ReservationLockService reservationLockService) {
         this.reservationRepository = reservationRepository;
         this.flightRepository = flightRepository;
         this.userRepository = userRepository;
+        this.reservationLockService = reservationLockService;
     }
 
     public List<Reservation> getAllReservations() {
@@ -34,16 +40,22 @@ public class ReservationService {
                 .orElseThrow(() -> new NotFoundException(404, "Reservation not found with ID: " + id));
     }
 
+    @Transactional
     public Reservation createReservation(Long flightId, Long userId, int reservedSeats) {
         Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new NotFoundException(404, "Flight not found with ID: " + flightId));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(404, "User not found with ID: " + userId));
 
+        if (reservationLockService.isSeatLocked(flightId)) {
+            throw new IllegalStateException("Seats for this flight are temporarily locked due to an ongoing reservation.");
+        }
+
         if (flight.getAvailableSeats() < reservedSeats) {
             throw new IllegalArgumentException("Not enough seats available for flight: " + flight.getFlightCode());
         }
 
+        reservationLockService.lockSeats(flightId);
         Reservation reservation = new Reservation();
         reservation.setFlight(flight);
         reservation.setUser(user);
@@ -57,6 +69,7 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    @Transactional
     public Reservation updateReservation(Long id, Reservation updatedReservation) {
         Reservation existingReservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(404, "Reservation not found with ID: " + id));
@@ -77,6 +90,7 @@ public class ReservationService {
         return reservationRepository.save(existingReservation);
     }
 
+    @Transactional
     public void deleteReservation(Long id) {
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(404, "Reservation not found with ID: " + id));
@@ -89,7 +103,10 @@ public class ReservationService {
         reservationRepository.delete(reservation);
     }
 
-    public List<Reservation> getReservationsByUser(User user) {
+    public List<Reservation> getReservationsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(404, "User not found with ID: " + userId));
+
         return reservationRepository.findByUser(user);
     }
 

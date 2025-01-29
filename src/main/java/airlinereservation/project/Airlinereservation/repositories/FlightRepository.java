@@ -2,9 +2,7 @@ package airlinereservation.project.Airlinereservation.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
 import airlinereservation.project.Airlinereservation.models.Flight;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,4 +18,7 @@ public interface FlightRepository extends JpaRepository<Flight, Long> {
     List<Flight> findByAvailableSeatsGreaterThan(int availableSeats);
 
     List<Flight> findBySourceAndDestinationAndAvailableSeatsGreaterThan(String source, String destination, int availableSeats);
+
+    List<Flight> findBySourceAndDestinationAndDepartureTimeAfterAndAvailableSeatsGreaterThan(
+            String source, String destination, LocalDateTime departureTime, int availableSeats);
 }
