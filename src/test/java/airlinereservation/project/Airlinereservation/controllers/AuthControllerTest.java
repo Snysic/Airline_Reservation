@@ -44,10 +44,8 @@ class AuthControllerTest {
 
         when(userService.registerUser(user)).thenReturn(user);
 
-        // Act
         ResponseEntity<String> response = authController.registerUser(user);
 
-        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("User registered successfully!", response.getBody());
         verify(userService, times(1)).registerUser(user);

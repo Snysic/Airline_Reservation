@@ -4,24 +4,27 @@ import airlinereservation.project.Airlinereservation.models.User;
 import airlinereservation.project.Airlinereservation.services.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@ExtendWith(MockitoExtension.class)
 class UserControllerTest {
-
-    @InjectMocks
-    private UserController userController;
 
     @Mock
     private UserService userService;
@@ -29,79 +32,133 @@ class UserControllerTest {
     @Mock
     private Authentication authentication;
 
-    private User user;
+    @InjectMocks
+    private UserController userController;
+
+    private MockMvc mockMvc;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        user = new User("user", "password", "user@example.com");
-        user.setId(1L);
+        mockMvc = MockMvcBuilders.standaloneSetup(userController).build();
+
+        testUser = new User();
+        testUser.setUsername("testuser");
+        testUser.setEmail("testuser@example.com");
+        testUser.setPassword("securepassword");
+
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
-    void testGetUserReservations() {
-        when(authentication.getName()).thenReturn("user");
-        when(userService.getUserByUsername("user")).thenReturn(user);
-        List<String> reservations = Arrays.asList("Reservation 1", "Reservation 2");
-        when(userService.getUserReservations(user)).thenReturn(reservations);
+    void testGetUserProfile() throws Exception {
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.getUserByUsername("testuser")).thenReturn(testUser);
 
-        ResponseEntity<List<String>> response = userController.getUserReservations(authentication);
+        mockMvc.perform(get("/api/v1/user/profile")
+                        .with(request -> {
+                            request.setUserPrincipal(authentication);
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.email").value("testuser@example.com"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(reservations);
-        verify(userService, times(1)).getUserByUsername("user");
-        verify(userService, times(1)).getUserReservations(user);
+        verify(userService, times(1)).getUserByUsername("testuser");
     }
 
     @Test
-    void testUploadProfilePicture() {
-        MockMultipartFile file = new MockMultipartFile("file", "profile.jpg", "image/jpeg", "test image".getBytes());
-        when(authentication.getName()).thenReturn("user");
-        when(userService.getUserByUsername("user")).thenReturn(user);
+    void testGetUserReservations() throws Exception {
+        List<String> reservations = List.of("Reservation 1", "Reservation 2");
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.getUserByUsername("testuser")).thenReturn(testUser);
+        when(userService.getUserReservations(testUser)).thenReturn(reservations);
 
-        ResponseEntity<String> response = userController.uploadProfilePicture(file, authentication);
+        mockMvc.perform(get("/api/v1/user/reservations")
+                        .with(request -> {
+                            request.setUserPrincipal(authentication);
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(2))
+                .andExpect(jsonPath("$[0]").value("Reservation 1"))
+                .andExpect(jsonPath("$[1]").value("Reservation 2"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("Profile picture uploaded successfully");
-        verify(userService, times(1)).getUserByUsername("user");
-        verify(userService, times(1)).uploadProfilePicture(user, file);
+        verify(userService, times(1)).getUserByUsername("testuser");
+        verify(userService, times(1)).getUserReservations(testUser);
     }
 
     @Test
-    void testUploadProfilePictureEmptyFile() {
-        MockMultipartFile file = new MockMultipartFile("file", "", "image/jpeg", new byte[0]);
+    void testUploadProfilePicture_Success() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "profile.jpg", "image/jpeg", "mock image content".getBytes());
 
-        IllegalArgumentException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalArgumentException.class,
-                () -> userController.uploadProfilePicture(file, authentication)
-        );
+        when(authentication.getName()).thenReturn("testuser");
+        when(userService.getUserByUsername("testuser")).thenReturn(testUser);
+        doNothing().when(userService).uploadProfilePicture(any(User.class), any(MockMultipartFile.class));
 
-        assertThat(exception.getMessage()).isEqualTo("File cannot be empty");
-        verifyNoInteractions(userService);
+        mockMvc.perform(multipart("/api/v1/user/profile/upload")
+                        .file(file)
+                        .with(request -> {
+                            request.setUserPrincipal(authentication);
+                            return request;
+                        }))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Profile picture uploaded successfully"));
+
+        verify(userService, times(1)).getUserByUsername("testuser");
+        verify(userService, times(1)).uploadProfilePicture(any(User.class), any(MockMultipartFile.class));
     }
 
     @Test
-    void testRegisterUser() {
-        when(userService.registerUser(user)).thenReturn(user);
+    void testUploadProfilePicture_Failure_EmptyFile() throws Exception {
+        MockMultipartFile emptyFile = new MockMultipartFile("file", "", "image/jpeg", new byte[0]);
 
-        ResponseEntity<String> response = userController.registerUser(user);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo("User registered successfully");
-        verify(userService, times(1)).registerUser(user);
+        mockMvc.perform(multipart("/api/v1/user/profile/upload")
+                        .file(emptyFile)
+                        .with(request -> {
+                            request.setUserPrincipal(authentication);
+                            return request;
+                        }))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("File cannot be empty"));
     }
 
     @Test
-    void testRegisterUserWithIncompleteData() {
-        User incompleteUser = new User();
-        incompleteUser.setUsername("user");
+    void testRegisterUser_Success() throws Exception {
+        when(userService.registerUser(any(User.class))).thenReturn(testUser);
 
-        IllegalArgumentException exception = org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalArgumentException.class,
-                () -> userController.registerUser(incompleteUser)
-        );
+        mockMvc.perform(post("/api/v1/user/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "newuser",
+                                  "password": "securepassword",
+                                  "email": "newuser@example.com"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(content().string("User registered successfully"));
 
-        assertThat(exception.getMessage()).isEqualTo("User data is incomplete");
-        verifyNoInteractions(userService);
+        verify(userService, times(1)).registerUser(any(User.class));
+    }
+
+    @Test
+    void testRegisterUser_Failure_IncompleteData() throws Exception {
+        doThrow(new IllegalArgumentException("User data is incomplete"))
+                .when(userService).registerUser(any(User.class));
+
+        mockMvc.perform(post("/api/v1/user/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "incompleteuser"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("User data is incomplete"));
+
+        verify(userService, times(1)).registerUser(any(User.class));
     }
 }

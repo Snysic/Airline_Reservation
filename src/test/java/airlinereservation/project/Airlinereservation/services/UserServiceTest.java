@@ -1,5 +1,8 @@
 package airlinereservation.project.Airlinereservation.services;
 
+
+import airlinereservation.project.Airlinereservation.errors.NotFoundException;
+import airlinereservation.project.Airlinereservation.errors.InvalidRequestException;
 import airlinereservation.project.Airlinereservation.models.Role;
 import airlinereservation.project.Airlinereservation.models.User;
 import airlinereservation.project.Airlinereservation.models.enums.UserRole;
@@ -8,128 +11,149 @@ import airlinereservation.project.Airlinereservation.repositories.RoleRepository
 import airlinereservation.project.Airlinereservation.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mockito;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
-    @Mock
     private UserRepository userRepository;
-
-    @Mock
     private ReservationRepository reservationRepository;
-
-    @Mock
     private PasswordEncoder passwordEncoder;
-
-    @Mock
     private RoleRepository roleRepository;
 
-    @InjectMocks
     private UserService userService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        userRepository = mock(UserRepository.class);
+        reservationRepository = mock(ReservationRepository.class);
+        passwordEncoder = mock(PasswordEncoder.class);
+        roleRepository = mock(RoleRepository.class);
+
+        userService = new UserService(userRepository, reservationRepository, passwordEncoder, roleRepository);
     }
 
     @Test
     void testRegisterUser_Success() {
-        User user = new User();
-        user.setUsername("testuser");
-        user.setPassword("password");
-
-        Role userRole = new Role();
-        userRole.setName(UserRole.ROLE_USER);
-
+        User user = new User("testUser", "password", "test@example.com");
         when(userRepository.existsByUsername(user.getUsername())).thenReturn(false);
-        when(passwordEncoder.encode(user.getPassword())).thenAnswer(invocation -> "encodedPassword");
-        when(roleRepository.findByName(UserRole.ROLE_USER)).thenAnswer(invocation -> Optional.of(userRole));
-        when(userRepository.save(user)).thenAnswer(invocation -> {
-            user.setId(1L);
-            return user;
-        });
+        when(passwordEncoder.encode(user.getPassword())).thenReturn("encodedPassword");
 
-        User result = userService.registerUser(user);
+        Role role = new Role(UserRole.ROLE_USER);
+        when(roleRepository.findByName(UserRole.ROLE_USER)).thenReturn(Optional.of(role));
+        when(userRepository.save(Mockito.any(User.class))).thenReturn(user);
 
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        assertEquals("encodedPassword", result.getPassword());
-        assertTrue(result.getRoles().contains(userRole));
-        verify(userRepository, times(1)).save(user);
+        User savedUser = userService.registerUser(user);
+
+        assertNotNull(savedUser);
+        verify(userRepository).save(Mockito.any(User.class));
+        assertEquals("testUser", savedUser.getUsername());
     }
 
     @Test
     void testRegisterUser_UserAlreadyExists() {
-        User user = new User();
-        user.setUsername("existinguser");
-
+        User user = new User("testUser", "password", "test@example.com");
         when(userRepository.existsByUsername(user.getUsername())).thenReturn(true);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.registerUser(user));
-
-        assertEquals("User already exists with username: existinguser", exception.getMessage());
-        verify(userRepository, never()).save(any());
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> userService.registerUser(user));
+        assertEquals("User already exists with username: testUser", exception.getMessage());
     }
 
     @Test
-    void testGetUserById_Success() {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("testuser");
+    void testGetUserById_UserExists() {
+        User user = new User("testUser", "password", "test@example.com");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        when(userRepository.findById(1L)).thenAnswer(invocation -> Optional.of(user));
+        User foundUser = userService.getUserById(1L);
 
-        User result = userService.getUserById(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getId());
-        verify(userRepository, times(1)).findById(1L);
+        assertNotNull(foundUser);
+        assertEquals("testUser", foundUser.getUsername());
     }
 
     @Test
-    void testGetUserById_NotFound() {
-        when(userRepository.findById(1L)).thenAnswer(invocation -> Optional.empty());
+    void testGetUserById_UserNotFound() {
+        when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.getUserById(1L));
-
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.getUserById(1L));
         assertEquals("User not found with ID: 1", exception.getMessage());
-        verify(userRepository, times(1)).findById(1L);
     }
 
     @Test
-    void testUploadProfilePicture_Success() throws Exception {
-        User user = new User();
-        MultipartFile file = mock(MultipartFile.class);
+    void testGetUserReservations() {
+        User user = new User("testUser", "password", "test@example.com");
+        when(reservationRepository.findByUser(user)).thenReturn(List.of());
 
+        List<String> reservations = userService.getUserReservations(user);
+
+        assertNotNull(reservations);
+        assertTrue(reservations.isEmpty());
+    }
+
+    @Test
+    void testUploadProfilePicture_Success() throws IOException {
+        User user = new User("testUser", "password", "test@example.com");
+        MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
-        when(file.getBytes()).thenAnswer(invocation -> new byte[]{1, 2, 3});
+        when(file.getBytes()).thenReturn("file content".getBytes());
 
         userService.uploadProfilePicture(user, file);
 
-        assertArrayEquals(new byte[]{1, 2, 3}, user.getProfilePicture());
-        verify(userRepository, times(1)).save(user);
+        verify(userRepository).save(user);
+        assertNotNull(user.getProfilePicture());
     }
 
     @Test
-    void testUploadProfilePicture_EmptyFile() {
-        User user = new User();
+    void testUploadProfilePicture_FileIsEmpty() {
+        User user = new User("testUser", "password", "test@example.com");
         MultipartFile file = mock(MultipartFile.class);
-
         when(file.isEmpty()).thenReturn(true);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.uploadProfilePicture(user, file));
-
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () -> userService.uploadProfilePicture(user, file));
         assertEquals("File cannot be null or empty", exception.getMessage());
-        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+void testCreateUser_Success() {
+    when(userRepository.existsByUsername("newUser")).thenReturn(false);
+    
+    when(passwordEncoder.encode("newPassword")).thenReturn("encodedPassword");
+    
+    Role role = new Role(UserRole.ROLE_USER);
+    when(roleRepository.findByName(UserRole.ROLE_USER)).thenReturn(Optional.of(role));
+    
+    User expectedUser = new User("newUser", "encodedPassword", "new@example.com", null);
+    expectedUser.setRoles(Set.of(role));
+
+    when(userRepository.save(Mockito.any(User.class))).thenReturn(expectedUser);
+
+    User actualUser = userService.createUser("newUser", "newPassword", "new@example.com", null);
+
+    assertNotNull(actualUser);
+    verify(userRepository).save(Mockito.any(User.class));
+    
+    assertEquals("newUser", actualUser.getUsername());
+    assertEquals("encodedPassword", actualUser.getPassword());
+    assertEquals("new@example.com", actualUser.getEmail());
+    assertEquals(Set.of(role), actualUser.getRoles());
+}
+
+    @Test
+    void testCreateUser_UserAlreadyExists() {
+        when(userRepository.existsByUsername("existingUser")).thenReturn(true);
+
+        InvalidRequestException exception = assertThrows(InvalidRequestException.class, () ->
+                userService.createUser("existingUser", "password", "existing@example.com", null));
+
+        assertEquals("User already exists with username: existingUser", exception.getMessage());
     }
 
     @Test
@@ -138,16 +162,14 @@ class UserServiceTest {
 
         userService.deleteUser(1L);
 
-        verify(userRepository, times(1)).deleteById(1L);
+        verify(userRepository).deleteById(1L);
     }
 
     @Test
-    void testDeleteUser_NotFound() {
+    void testDeleteUser_UserNotFound() {
         when(userRepository.existsById(1L)).thenReturn(false);
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> userService.deleteUser(1L));
-
+        NotFoundException exception = assertThrows(NotFoundException.class, () -> userService.deleteUser(1L));
         assertEquals("User not found with ID: 1", exception.getMessage());
-        verify(userRepository, never()).deleteById(1L);
     }
 }

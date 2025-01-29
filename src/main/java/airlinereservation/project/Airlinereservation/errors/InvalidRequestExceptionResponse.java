@@ -1,6 +1,5 @@
 package airlinereservation.project.Airlinereservation.errors;
 
-
 public class InvalidRequestExceptionResponse {
 
     private int status;
