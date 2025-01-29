@@ -1,11 +1,12 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
+import airlinereservation.project.Airlinereservation.models.User;
+import airlinereservation.project.Airlinereservation.services.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import airlinereservation.project.Airlinereservation.models.User;
-import airlinereservation.project.Airlinereservation.services.UserService;
 
 import java.util.List;
 
@@ -19,6 +20,13 @@ public class UserController {
         this.userService = userService;
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<User> getUserProfile(Authentication authentication) {
+        String username = authentication.getName();
+        User user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
+    }
+
     @GetMapping("/reservations")
     public ResponseEntity<List<String>> getUserReservations(Authentication authentication) {
         User user = userService.getUserByUsername(authentication.getName());
@@ -28,7 +36,7 @@ public class UserController {
     @PostMapping("/profile/upload")
     public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file, Authentication authentication) {
         if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("File cannot be empty");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File cannot be empty");
         }
 
         User user = userService.getUserByUsername(authentication.getName());
@@ -39,10 +47,11 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody User user) {
         if (user == null || user.getUsername() == null || user.getPassword() == null || user.getEmail() == null) {
-            throw new IllegalArgumentException("User data is incomplete");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User data is incomplete");
         }
 
         userService.registerUser(user);
         return ResponseEntity.ok("User registered successfully");
     }
+
 }

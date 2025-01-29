@@ -2,11 +2,13 @@ package airlinereservation.project.Airlinereservation.models;
 
 import airlinereservation.project.Airlinereservation.models.enums.UserRole;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 
 import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@AllArgsConstructor
 public class User {
 
     @Id
@@ -39,11 +41,11 @@ public class User {
 
     public User() {
     }
-
     public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
         this.email = email;
+        
     }
 
     public User(String username, String password, String email, byte[] profilePicture) {

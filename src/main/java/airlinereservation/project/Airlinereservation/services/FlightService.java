@@ -92,9 +92,12 @@ public class FlightService {
         flightRepository.deleteById(id);
     }
 
-    public List<Flight> searchFlights(String source, String destination) {
-        logger.info("Searching flights from '{}' to '{}'", source, destination);
-        return flightRepository.findBySourceAndDestination(source, destination);
+    public List<Flight> searchFlights(String source, String destination, LocalDateTime departureTime, int seats) {
+        logger.info("Searching flights from '{}' to '{}', after '{}', with at least '{}' seats.", 
+                    source, destination, departureTime, seats);
+
+        return flightRepository.findBySourceAndDestinationAndDepartureTimeAfterAndAvailableSeatsGreaterThan(
+            source, destination, departureTime, seats);
     }
 
     @Scheduled(fixedRate = 900000) 

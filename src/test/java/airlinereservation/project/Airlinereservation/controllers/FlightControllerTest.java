@@ -4,104 +4,158 @@ import airlinereservation.project.Airlinereservation.models.Flight;
 import airlinereservation.project.Airlinereservation.services.FlightService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 class FlightControllerTest {
 
-    @InjectMocks
-    private FlightController flightController;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
+    @SuppressWarnings("removal")
+@MockBean
     private FlightService flightService;
 
-    private Flight flight;
+    private Flight flight1;
+    private Flight flight2;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        flight = new Flight(
-                "FL123",
-                "New York",
-                "Los Angeles",
+        flight1 = new Flight("FL123", "NYC", "LAX",
                 LocalDateTime.of(2025, 1, 17, 8, 0),
-                LocalDateTime.of(2025, 1, 17, 11, 0),
-                100,
-                "AVAILABLE"
-        );
-        flight.setId(1L);
+                LocalDateTime.of(2025, 1, 17, 11, 0), 100, "AVAILABLE");
+
+        flight2 = new Flight("FL456", "SFO", "ORD",
+                LocalDateTime.of(2025, 1, 18, 14, 0),
+                LocalDateTime.of(2025, 1, 18, 18, 0), 150, "AVAILABLE");
     }
 
     @Test
-    void testGetAllFlights() {
-        List<Flight> flights = Arrays.asList(flight);
-        when(flightService.getAllFlights()).thenReturn(flights);
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    void testGetAllFlights() throws Exception {
+        when(flightService.getAllFlights()).thenReturn(List.of(flight1, flight2));
 
-        ResponseEntity<List<Flight>> response = flightController.getAllFlights();
+        mockMvc.perform(get("/api/v1/flights"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(2))
+                .andExpect(jsonPath("$[0].flightCode").value("FL123"))
+                .andExpect(jsonPath("$[1].flightCode").value("FL456"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(flights);
         verify(flightService, times(1)).getAllFlights();
     }
 
     @Test
-    void testGetFlightById() {
-        when(flightService.getFlightById(1L)).thenReturn(flight);
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    void testGetFlightById_Success() throws Exception {
+        when(flightService.getFlightById(1L)).thenReturn(flight1);
 
-        ResponseEntity<Flight> response = flightController.getFlightById(1L);
+        mockMvc.perform(get("/api/v1/flights/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flightCode").value("FL123"))
+                .andExpect(jsonPath("$.source").value("NYC"))
+                .andExpect(jsonPath("$.destination").value("LAX"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(flight);
         verify(flightService, times(1)).getFlightById(1L);
     }
 
     @Test
-    void testCreateFlight() {
-        when(flightService.createFlight(flight)).thenReturn(flight);
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void testCreateFlight_Success() throws Exception {
+        when(flightService.createFlight(Mockito.any(Flight.class))).thenReturn(flight1);
 
-        ResponseEntity<Flight> response = flightController.createFlight(flight);
+        mockMvc.perform(post("/api/v1/flights")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "flightCode": "FL123",
+                                  "source": "NYC",
+                                  "destination": "LAX",
+                                  "departureTime": "2025-01-17T08:00:00",
+                                  "arrivalTime": "2025-01-17T11:00:00",
+                                  "availableSeats": 100,
+                                  "status": "AVAILABLE"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.flightCode").value("FL123"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        assertThat(response.getBody()).isEqualTo(flight);
-        verify(flightService, times(1)).createFlight(flight);
+        verify(flightService, times(1)).createFlight(Mockito.any(Flight.class));
     }
 
     @Test
-    void testUpdateFlight() {
-        Flight updatedFlight = new Flight(
-                "FL123",
-                "New York",
-                "San Francisco",
-                LocalDateTime.of(2025, 1, 18, 9, 0),
-                LocalDateTime.of(2025, 1, 18, 12, 0),
-                90,
-                "AVAILABLE"
-        );
-        updatedFlight.setId(1L);
-        when(flightService.updateFlight(1L, updatedFlight)).thenReturn(updatedFlight);
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void testUpdateFlight_Success() throws Exception {
+        when(flightService.updateFlight(eq(1L), Mockito.any(Flight.class))).thenReturn(flight1);
 
-        ResponseEntity<Flight> response = flightController.updateFlight(1L, updatedFlight);
+        mockMvc.perform(put("/api/v1/flights/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "flightCode": "FL123",
+                                  "source": "NYC",
+                                  "destination": "LAX",
+                                  "departureTime": "2025-01-17T08:00:00",
+                                  "arrivalTime": "2025-01-17T11:00:00",
+                                  "availableSeats": 100,
+                                  "status": "AVAILABLE"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.flightCode").value("FL123"));
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).isEqualTo(updatedFlight);
-        verify(flightService, times(1)).updateFlight(1L, updatedFlight);
+        verify(flightService, times(1)).updateFlight(eq(1L), Mockito.any(Flight.class));
     }
 
     @Test
-    void testDeleteFlight() {
-        ResponseEntity<Void> response = flightController.deleteFlight(1L);
+    @WithMockUser(username = "admin", roles = {"ADMIN"})
+    void testDeleteFlight_Success() throws Exception {
+        doNothing().when(flightService).deleteFlight(1L);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        mockMvc.perform(delete("/api/v1/flights/1"))
+                .andExpect(status().isNoContent());
+
         verify(flightService, times(1)).deleteFlight(1L);
+    }
+
+    @Test
+    @WithMockUser(username = "testUser", roles = {"USER"})
+    void testSearchFlights() throws Exception {
+        when(flightService.searchFlights("NYC", "LAX", LocalDateTime.of(2025, 1, 17, 8, 0), 2))
+                .thenReturn(List.of(flight1));
+
+        mockMvc.perform(get("/api/v1/flights/search")
+                        .param("source", "NYC")
+                        .param("destination", "LAX")
+                        .param("departureTime", "2025-01-17T08:00:00")
+                        .param("seats", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size()").value(1))
+                .andExpect(jsonPath("$[0].flightCode").value("FL123"));
+
+        verify(flightService, times(1)).searchFlights("NYC", "LAX", LocalDateTime.of(2025, 1, 17, 8, 0), 2);
+    }
+
+    @Test
+    void testUnauthorizedAccess() throws Exception {
+        mockMvc.perform(get("/api/v1/flights"))
+                .andExpect(status().isUnauthorized());
     }
 }

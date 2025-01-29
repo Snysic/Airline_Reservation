@@ -1,6 +1,5 @@
 package airlinereservation.project.Airlinereservation.errors;
 
-
 public class NotFoundException extends RuntimeException {
 
     private int status;

@@ -1,14 +1,14 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-
 import airlinereservation.project.Airlinereservation.models.Flight;
 import airlinereservation.project.Airlinereservation.services.FlightService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -51,4 +51,14 @@ public class FlightController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<List<Flight>> searchFlights(
+            @RequestParam String source,
+            @RequestParam String destination,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime departureTime,
+            @RequestParam int seats) {
+
+        List<Flight> flights = flightService.searchFlights(source, destination, departureTime, seats);
+        return ResponseEntity.ok(flights);
+    }
 }
