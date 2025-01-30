@@ -1,8 +1,10 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
+import airlinereservation.project.Airlinereservation.config.ReservationRequest;
 import airlinereservation.project.Airlinereservation.models.Flight;
 import airlinereservation.project.Airlinereservation.models.Reservation;
 import airlinereservation.project.Airlinereservation.models.User;
+import airlinereservation.project.Airlinereservation.services.ReservationLockService;
 import airlinereservation.project.Airlinereservation.services.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 class ReservationControllerTest {
@@ -27,22 +30,58 @@ class ReservationControllerTest {
     @Mock
     private ReservationService reservationService;
 
+    @Mock
+    private ReservationLockService reservationLockService;
+
     private Reservation reservation;
+    private Flight flight;
+    private User user;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        Flight flight = new Flight("FL123", "New York", "Los Angeles",
+        flight = new Flight("FL123", "New York", "Los Angeles",
                 LocalDateTime.of(2025, 1, 17, 8, 0),
                 LocalDateTime.of(2025, 1, 17, 11, 0), 100, "AVAILABLE");
         flight.setId(1L);
 
-        User user = new User("user", "password", "user@example.com");
+        user = new User("user", "password", "user@example.com");
         user.setId(1L);
 
         reservation = new Reservation(flight, user, LocalDateTime.now(), 2, "CONFIRMED");
         reservation.setId(1L);
+    }
+
+    @Test
+    void testLockSeats_Success() {
+        ReservationRequest request = new ReservationRequest();
+        request.setFlightId(1L);
+
+        when(reservationLockService.isSeatLocked(1L)).thenReturn(false);
+        doNothing().when(reservationLockService).lockSeats(1L);
+
+        ResponseEntity<String> response = reservationController.lockSeats(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().trim()).contains("Seats reserved for 15 minutes");
+
+        verify(reservationLockService, times(1)).lockSeats(1L);
+    }
+
+    @Test
+    void testLockSeats_Failure_AlreadyLocked() {
+        ReservationRequest request = new ReservationRequest();
+        request.setFlightId(1L);
+
+        when(reservationLockService.isSeatLocked(1L)).thenReturn(true);
+
+        ResponseEntity<String> response = reservationController.lockSeats(request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody()).isEqualTo("Seats are already locked for this flight.");
+
+        verify(reservationLockService, never()).lockSeats(anyLong());
     }
 
     @Test
