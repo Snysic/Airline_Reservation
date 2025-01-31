@@ -72,6 +72,18 @@
 5 Access the application:
 
 - Open your browser and navigate to http://localhost:8080.
+  
+  ## 📂Project Structure
+
+The project follows the principle of separation of concerns, using three main layers:
+- Controllers: Handle HTTP requests.
+- Services: Manage business logic.
+- Repositories: Interact with the database.
+
+DTOs are used for data transfer between layers, and global exception handling ensures consistent error responses. Custom exceptions are employed for domain-specific errors, making the codebase maintainable, scalable, and easy to extend.
+
+<img src="src/main/java/airlinereservation/project/Airlinereservation/image/Project_Structure_Diagram.png" alt="img.png" width="350" height="400">
+
 
 ## ✅API Endpoints
 
@@ -138,8 +150,10 @@ Review test coverage reports.
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
 
 ## ✅Class Diagram
+<img src="src/main/java/airlinereservation/project/Airlinereservation/image/ClassDiagram.png" alt="img.png" width="350" height="400">
 
-## ✅Database Schema
+## ✅Coverage
+<img src="src/main/java/airlinereservation/project/Airlinereservation/image/cover.bmp" alt="img.png" width="350" height="400">
 
 ## ✅Author
 

@@ -1,11 +1,12 @@
 package airlinereservation.project.Airlinereservation.controllers;
 
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import airlinereservation.project.Airlinereservation.config.ReservationRequest;
 import airlinereservation.project.Airlinereservation.models.Reservation;
+import airlinereservation.project.Airlinereservation.services.ReservationLockService;
 import airlinereservation.project.Airlinereservation.services.ReservationService;
 
 import java.util.List;
@@ -14,10 +15,22 @@ import java.util.List;
 @RequestMapping("/api/v1/reservations")
 public class ReservationController {
 
-    private final ReservationService reservationService;
+     private final ReservationService reservationService;
+    private final ReservationLockService reservationLockService;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(ReservationService reservationService, ReservationLockService reservationLockService) {
         this.reservationService = reservationService;
+        this.reservationLockService = reservationLockService;
+    }
+
+    @PostMapping("/lock")
+    public ResponseEntity<String> lockSeats(@RequestBody ReservationRequest request) {
+        if (reservationLockService.isSeatLocked(request.getFlightId())) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Seats are already locked for this flight.");
+        }
+
+        reservationLockService.lockSeats(request.getFlightId());
+        return ResponseEntity.ok("Seats reserved for 15 minutes.");
     }
 
     @GetMapping
